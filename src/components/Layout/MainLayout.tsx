@@ -169,18 +169,13 @@ const MainLayout: React.FC = () => {
 
   const getPageTitle = () => {
     const path = location.pathname;
+    if (path === '/') return '首页';
     if (path.startsWith('/solution')) return '方案中心';
     if (path.startsWith('/knowledge')) return '知识库';
+    if (path.startsWith('/security-sites')) return '安全站点';
+    if (path.startsWith('/settings')) return '系统设置';
     return '工作台';
   };
-
-  if (isHome) {
-    return (
-      <Layout style={{ minHeight: '100vh', background: theme.colors.bgLayout }}>
-        <Outlet />
-      </Layout>
-    );
-  }
 
   return (
     <Layout style={{ minHeight: '100vh', background: theme.colors.bgLayout }}>

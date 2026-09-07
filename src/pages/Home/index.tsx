@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Input, Button, Row, Col, Typography } from 'antd';
+import { Input, Button, Row, Col, Typography, Space } from 'antd';
 import {
-  SearchOutlined,
   FileTextOutlined,
   BookOutlined,
   BarChartOutlined,
   BankOutlined,
   SafetyOutlined,
-  SettingOutlined,
   GlobalOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/theme';
-import { useSolutionStore } from '@/store/solution';
+import { usePlatformStore } from '@/store/platform';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const { Title } = Typography;
@@ -21,7 +19,7 @@ const { Search } = Input;
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useThemeStore();
-  const { solutions } = useSolutionStore();
+  const { platformName, logoUrl } = usePlatformStore();
   const [background, setBackground] = useState<string>(
     localStorage.getItem('homeBackground') || ''
   );
@@ -69,7 +67,7 @@ const Home: React.FC = () => {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: 'calc(100vh - 120px)',
       background: background
         ? `url(${background}) center/cover no-repeat`
         : `linear-gradient(135deg, ${theme.colors.bgLayout} 0%, ${theme.colors.border} 50%, ${theme.colors.primary}20 100%)`,
@@ -79,15 +77,20 @@ const Home: React.FC = () => {
       justifyContent: 'center',
       position: 'relative',
       transition: 'background 0.3s ease',
+      borderRadius: 8,
     }}>
-      <div style={{ position: 'fixed', top: 24, right: 24 }}>
+      <div style={{ position: 'absolute', top: 16, right: 16 }}>
         <ThemeToggle />
       </div>
 
       <div style={{ textAlign: 'center', padding: 40, maxWidth: 900, width: '100%' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+        {logoUrl ? (
+          <img src={logoUrl} alt="Logo" style={{ width: 64, height: 64, marginBottom: 16 }} />
+        ) : (
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+        )}
         <Title level={2} style={{ color: theme.colors.primary, marginBottom: 32 }}>
-          工作台
+          {platformName}
         </Title>
 
         <div style={{ marginBottom: 48 }}>
@@ -183,9 +186,9 @@ const Home: React.FC = () => {
       <Button
         onClick={handleChangeBackground}
         style={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
+          position: 'absolute',
+          bottom: 16,
+          right: 16,
           borderRadius: 20,
           background: 'rgba(255, 255, 255, 0.8)',
           border: `1px solid ${theme.colors.primary}`,
