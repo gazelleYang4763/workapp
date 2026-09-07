@@ -2,12 +2,12 @@ import { useState, useRef } from 'react';
 import { Card, Steps, Button, Form, Input, Select, Row, Col, Switch, Table, Space, message, Tag, Divider, Typography, Modal, InputNumber, Tooltip, Empty } from 'antd';
 import {
   SaveOutlined, ExportOutlined, ArrowLeftOutlined, PlusOutlined, DeleteOutlined,
-  UpOutlined, DownOutlined, FileTextOutlined, EyeOutlined, EditOutlined, PictureOutlined,
+  UpOutlined, DownOutlined, FileTextOutlined, EyeOutlined, EditOutlined, PictureOutlined, TableOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/theme';
 import { useSolutionStore } from '@/store/solution';
-import { exportMarkdown, exportHtml, printSolution } from '@/utils/export';
+import { exportMarkdown, exportHtml, exportWord } from '@/utils/export';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -484,6 +484,9 @@ const SolutionCreate: React.FC = () => {
   const [isCustomSubType, setIsCustomSubType] = useState(false);
   const [isCustomIndustry, setIsCustomIndustry] = useState(false);
   const textareaRef = useRef<any>(null);
+  const [tableModalOpen, setTableModalOpen] = useState(false);
+  const [tableRows, setTableRows] = useState(3);
+  const [tableHeadersInput, setTableHeadersInput] = useState('');
 
   const networkTypes = [
     { value: 'campus', label: '园区网络', desc: '企业园区网络建设', icon: '🏢' },
@@ -599,8 +602,9 @@ const SolutionCreate: React.FC = () => {
         exportHtml(solution as any);
         message.success('已导出HTML文件');
         break;
-      case '打印':
-        printSolution(solution as any);
+      case 'Word':
+        exportWord(solution as any);
+        message.success('已导出Word文件');
         break;
     }
   };
@@ -662,6 +666,42 @@ const SolutionCreate: React.FC = () => {
       }
     };
     input.click();
+  };
+
+  const handleInsertTable = () => {
+    setTableRows(3);
+    setTableHeadersInput('');
+    setTableModalOpen(true);
+  };
+
+  const handleConfirmInsertTable = () => {
+    const headers = tableHeadersInput.split(/[,，、\s]+/).filter(Boolean);
+    if (headers.length === 0) {
+      message.warning('请填写表头');
+      return;
+    }
+    let markdown = '\n| ' + headers.join(' | ') + ' |\n';
+    markdown += '| ' + headers.map(() => '---').join(' | ') + ' |\n';
+    for (let i = 0; i < tableRows; i++) {
+      markdown += '| ' + headers.map(() => '').join(' | ') + ' |\n';
+    }
+    markdown += '\n';
+    const textarea = textareaRef.current?.resizableTextArea?.textArea;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText = chapterContent.substring(0, start) + markdown + chapterContent.substring(end);
+      const cursorPos = start + markdown.length;
+      setChapterContent(newText);
+      requestAnimationFrame(() => {
+        textarea.focus();
+        textarea.setSelectionRange(cursorPos, cursorPos);
+      });
+    } else {
+      setChapterContent(chapterContent + markdown);
+    }
+    setTableModalOpen(false);
+    message.success('表格已插入');
   };
 
   const handleAddProduct = () => {
@@ -1082,11 +1122,10 @@ const SolutionCreate: React.FC = () => {
             💡 以下为模板内容，您可以直接修改。修改后仅影响当前方案，不会影响其他方案。
           </Text>
         </div>
-        <div style={{ marginBottom: 8 }}>
-          <Button size="small" icon={<PictureOutlined />} onClick={handleInsertImage}>
-            插入图片
-          </Button>
-          <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>支持插入本地图片</Text>
+        <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Button size="small" icon={<PictureOutlined />} onClick={handleInsertImage}>插入图片</Button>
+          <Button size="small" icon={<TableOutlined />} onClick={handleInsertTable}>插入表格</Button>
+          <Text type="secondary" style={{ fontSize: 12 }}>支持插入本地图片和表格</Text>
         </div>
         <TextArea
           ref={textareaRef}
@@ -1095,6 +1134,38 @@ const SolutionCreate: React.FC = () => {
           rows={20}
           style={{ fontSize: 14, lineHeight: 1.8 }}
         />
+      </Modal>
+
+      <Modal
+        title="插入表格"
+        open={tableModalOpen}
+        onOk={handleConfirmInsertTable}
+        onCancel={() => setTableModalOpen(false)}
+        width={500}
+        okText="插入"
+        cancelText="取消"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <Text>表头（用逗号或空格分隔）:</Text>
+            <Input
+              value={tableHeadersInput}
+              onChange={(e) => setTableHeadersInput(e.target.value)}
+              placeholder="例如: 序号, 名称, 类型, 数量, 备注"
+              style={{ marginTop: 4 }}
+            />
+          </div>
+          <div>
+            <Text>数据行数:</Text>
+            <InputNumber
+              value={tableRows}
+              onChange={(v) => setTableRows(v || 3)}
+              min={1}
+              max={50}
+              style={{ width: '100%', marginTop: 4 }}
+            />
+          </div>
+        </div>
       </Modal>
     </div>
   );
@@ -1318,9 +1389,9 @@ const SolutionCreate: React.FC = () => {
               <Button type="primary" onClick={handleNext} size="large">下一步</Button>
             ) : (
               <Space>
-                <Button icon={<ExportOutlined />} onClick={() => handleExport('Markdown')} size="large">导出MD</Button>
-                <Button onClick={() => handleExport('HTML')} size="large">导出HTML</Button>
-                <Button onClick={() => handleExport('打印')} size="large">打印预览</Button>
+                <Button icon={<ExportOutlined />} onClick={() => handleExport('HTML')} size="large">导出HTML</Button>
+                <Button icon={<ExportOutlined />} onClick={() => handleExport('Word')} size="large">导出Word</Button>
+                <Button onClick={() => handleExport('Markdown')} size="large">导出MD</Button>
                 <Button type="primary" onClick={handleSave} size="large">保存方案</Button>
               </Space>
             )}

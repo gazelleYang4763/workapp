@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
-import { Card, Descriptions, Tag, Typography, Button, Space, Row, Col, Table, Empty, Spin, Modal, Input, Form, Select, InputNumber, Switch, message, Divider, Upload } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, ExportOutlined, PrinterOutlined, EyeOutlined, SaveOutlined, DeleteOutlined, PlusOutlined, UpOutlined, DownOutlined, PictureOutlined, UploadOutlined } from '@ant-design/icons';
+import { Card, Descriptions, Tag, Typography, Button, Space, Row, Col, Table, Empty, Spin, Modal, Input, Select, InputNumber, Switch, message } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, ExportOutlined, SaveOutlined, DeleteOutlined, PlusOutlined, UpOutlined, DownOutlined, PictureOutlined, TableOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useThemeStore } from '@/store/theme';
 import { useSolutionStore } from '@/store/solution';
-import { exportMarkdown, exportHtml, printSolution } from '@/utils/export';
+import { exportMarkdown, exportHtml, exportWord } from '@/utils/export';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -22,6 +22,11 @@ const SolutionDetail: React.FC = () => {
   const [chapterModalOpen, setChapterModalOpen] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
   const [chapterContent, setChapterContent] = useState('');
+  const [tableModalOpen, setTableModalOpen] = useState(false);
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
+  const [tableHeaders, setTableHeaders] = useState<string[]>([]);
+  const [tableHeadersInput, setTableHeadersInput] = useState('');
   const textareaRef = useRef<any>(null);
 
   useEffect(() => {
@@ -66,7 +71,7 @@ const SolutionDetail: React.FC = () => {
     switch (format) {
       case 'Markdown': exportMarkdown(solution); break;
       case 'HTML': exportHtml(solution); break;
-      case '打印': printSolution(solution); break;
+      case 'Word': exportWord(solution); break;
     }
   };
 
@@ -175,24 +180,92 @@ const SolutionDetail: React.FC = () => {
     input.click();
   };
 
+  const handleInsertTable = () => {
+    setTableRows(3);
+    setTableCols(3);
+    setTableHeaders([]);
+    setTableHeadersInput('');
+    setTableModalOpen(true);
+  };
+
+  const handleConfirmInsertTable = () => {
+    const headers = tableHeadersInput.split(/[,，、\s]+/).filter(Boolean);
+    if (headers.length === 0) {
+      message.warning('请填写表头');
+      return;
+    }
+    const colCount = headers.length;
+    let markdown = '\n| ' + headers.join(' | ') + ' |\n';
+    markdown += '| ' + headers.map(() => '---').join(' | ') + ' |\n';
+    for (let i = 0; i < tableRows; i++) {
+      markdown += '| ' + headers.map(() => '').join(' | ') + ' |\n';
+    }
+    markdown += '\n';
+    const textarea = textareaRef.current?.resizableTextArea?.textArea;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText = chapterContent.substring(0, start) + markdown + chapterContent.substring(end);
+      const cursorPos = start + markdown.length;
+      setChapterContent(newText);
+      requestAnimationFrame(() => {
+        textarea.focus();
+        textarea.setSelectionRange(cursorPos, cursorPos);
+      });
+    } else {
+      setChapterContent(chapterContent + markdown);
+    }
+    setTableModalOpen(false);
+    message.success('表格已插入');
+  };
+
   const productCategories = ['防火墙', '交换机', '路由器', 'WAF', 'IDS/IPS', 'VPN', '服务器', '存储', '无线AP', 'AC控制器', '堡垒机', '日志审计'];
 
   const renderPreview = (text: string) => {
-    return text
+    let html = text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/__(.*?)__/g, '<u>$1</u>')
       .replace(/~~(.*?)~~/g, '<del>$1</del>')
       .replace(/`(.*?)`/g, '<code>$1</code>')
       .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
-      .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%"/>')
+      .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:4px;margin:8px 0"/>')
       .replace(/^### (.*$)/gm, '<h3>$1</h3>')
       .replace(/^## (.*$)/gm, '<h2>$1</h2>')
       .replace(/^# (.*$)/gm, '<h1>$1</h1>')
       .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
       .replace(/^\- (.*$)/gm, '<li>$1</li>')
-      .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
-      .replace(/\n/g, '<br/>');
+      .replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
+
+    // Render markdown tables
+    html = html.replace(/((?:^\|.+\|$\n?)+)/gm, (match) => {
+      const rows = match.trim().split('\n').filter(r => r.trim());
+      if (rows.length < 2) return match;
+      const headerCells = rows[0].split('|').filter(c => c.trim() !== '');
+      const isSeparator = (row: string) => row.split('|').filter(c => c.trim() !== '').every(c => /^[\s\-:]+$/.test(c));
+      if (rows.length >= 2 && isSeparator(rows[1])) {
+        const bodyRows = rows.slice(2);
+        let table = '<table style="border-collapse:collapse;width:100%;margin:12px 0"><thead><tr>';
+        headerCells.forEach(cell => {
+          table += `<th style="border:1px solid #d9d9d9;padding:8px 12px;background:#f0f5ff;font-weight:600;text-align:left">${cell.trim()}</th>`;
+        });
+        table += '</tr></thead><tbody>';
+        bodyRows.forEach(row => {
+          const cells = row.split('|').filter(c => c.trim() !== '');
+          table += '<tr>';
+          cells.forEach(cell => {
+            table += `<td style="border:1px solid #d9d9d9;padding:8px 12px">${cell.trim()}</td>`;
+          });
+          table += '</tr>';
+        });
+        table += '</tbody></table>';
+        return table;
+      }
+      return match;
+    });
+
+    html = html.replace(/\n/g, '<br/>');
+    return html;
   };
 
   return (
@@ -211,9 +284,9 @@ const SolutionDetail: React.FC = () => {
           ) : (
             <>
               <Button icon={<EditOutlined />} onClick={() => { setEditMode(true); setEditData({ ...solution }); }}>编辑</Button>
-              <Button icon={<ExportOutlined />} onClick={() => handleExport('Markdown')}>导出MD</Button>
-              <Button onClick={() => handleExport('HTML')}>导出HTML</Button>
-              <Button icon={<PrinterOutlined />} onClick={() => handleExport('打印')}>打印</Button>
+              <Button icon={<ExportOutlined />} onClick={() => handleExport('HTML')}>导出HTML</Button>
+              <Button icon={<ExportOutlined />} onClick={() => handleExport('Word')}>导出Word</Button>
+              <Button onClick={() => handleExport('Markdown')}>导出MD</Button>
             </>
           )}
         </Space>
@@ -413,11 +486,10 @@ const SolutionDetail: React.FC = () => {
         cancelText="取消"
       >
         {editMode && (
-          <div style={{ marginBottom: 8 }}>
-            <Button size="small" icon={<PictureOutlined />} onClick={handleInsertImage}>
-              插入图片
-            </Button>
-            <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>支持插入本地图片</Text>
+          <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Button size="small" icon={<PictureOutlined />} onClick={handleInsertImage}>插入图片</Button>
+            <Button size="small" icon={<TableOutlined />} onClick={handleInsertTable}>插入表格</Button>
+            <Text type="secondary" style={{ fontSize: 12 }}>支持插入本地图片和表格</Text>
           </div>
         )}
         {editMode ? (
@@ -438,6 +510,38 @@ const SolutionDetail: React.FC = () => {
             }}
           />
         )}
+      </Modal>
+
+      <Modal
+        title="插入表格"
+        open={tableModalOpen}
+        onOk={handleConfirmInsertTable}
+        onCancel={() => setTableModalOpen(false)}
+        width={500}
+        okText="插入"
+        cancelText="取消"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <Text>表头（用逗号或空格分隔）:</Text>
+            <Input
+              value={tableHeadersInput}
+              onChange={(e) => setTableHeadersInput(e.target.value)}
+              placeholder="例如: 序号, 名称, 类型, 数量, 备注"
+              style={{ marginTop: 4 }}
+            />
+          </div>
+          <div>
+            <Text>数据行数:</Text>
+            <InputNumber
+              value={tableRows}
+              onChange={(v) => setTableRows(v || 3)}
+              min={1}
+              max={50}
+              style={{ width: '100%', marginTop: 4 }}
+            />
+          </div>
+        </div>
       </Modal>
     </div>
   );
