@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Card, Descriptions, Tag, Typography, Button, Space, Row, Col, Table, Empty, Spin, Modal, Input, Form, Select, InputNumber, Switch, message, Divider } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, ExportOutlined, PrinterOutlined, EyeOutlined, SaveOutlined, DeleteOutlined, PlusOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
+import { useEffect, useState, useRef } from 'react';
+import { Card, Descriptions, Tag, Typography, Button, Space, Row, Col, Table, Empty, Spin, Modal, Input, Form, Select, InputNumber, Switch, message, Divider, Upload } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, ExportOutlined, PrinterOutlined, EyeOutlined, SaveOutlined, DeleteOutlined, PlusOutlined, UpOutlined, DownOutlined, PictureOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useThemeStore } from '@/store/theme';
 import { useSolutionStore } from '@/store/solution';
@@ -21,6 +21,8 @@ const SolutionDetail: React.FC = () => {
   const [editData, setEditData] = useState<any>(null);
   const [chapterModalOpen, setChapterModalOpen] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
+  const [chapterContent, setChapterContent] = useState('');
+  const textareaRef = useRef<any>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -62,37 +64,25 @@ const SolutionDetail: React.FC = () => {
 
   const handleExport = (format: string) => {
     switch (format) {
-      case 'Markdown':
-        exportMarkdown(solution);
-        break;
-      case 'HTML':
-        exportHtml(solution);
-        break;
-      case '打印':
-        printSolution(solution);
-        break;
+      case 'Markdown': exportMarkdown(solution); break;
+      case 'HTML': exportHtml(solution); break;
+      case '打印': printSolution(solution); break;
     }
   };
 
   const handleViewChapter = (chapter: any) => {
     setSelectedChapter(chapter);
+    setChapterContent(chapter.content || '');
     setChapterModalOpen(true);
   };
 
-  const handleEditChapter = (chapter: any) => {
-    setSelectedChapter({ ...chapter });
-    setChapterModalOpen(true);
-    setEditMode(true);
-  };
-
-  const handleSaveChapter = () => {
-    if (selectedChapter && editMode) {
+  const handleEditChapterContent = () => {
+    if (selectedChapter) {
       const newChapters = editData.chapters.map((c: any) =>
-        c.id === selectedChapter.id ? { ...c, content: selectedChapter.content } : c
+        c.id === selectedChapter.id ? { ...c, content: chapterContent } : c
       );
       setEditData({ ...editData, chapters: newChapters });
       setChapterModalOpen(false);
-      setEditMode(false);
       message.success('章节内容已更新');
     }
   };
@@ -117,8 +107,8 @@ const SolutionDetail: React.FC = () => {
     setEditData({ ...editData, chapters: newChapters });
   };
 
-  const handleDeleteChapter = (id: string) => {
-    setEditData({ ...editData, chapters: editData.chapters.filter((c: any) => c.id !== id) });
+  const handleDeleteChapter = (chapterId: string) => {
+    setEditData({ ...editData, chapters: editData.chapters.filter((c: any) => c.id !== chapterId) });
   };
 
   const handleAddChapter = () => {
@@ -146,15 +136,41 @@ const SolutionDetail: React.FC = () => {
     setEditData({ ...editData, products: [...(editData.products || []), newProduct] });
   };
 
-  const handleDeleteProduct = (id: string) => {
-    setEditData({ ...editData, products: editData.products.filter((p: any) => p.id !== id) });
+  const handleDeleteProduct = (productId: string) => {
+    setEditData({ ...editData, products: editData.products.filter((p: any) => p.id !== productId) });
   };
 
-  const handleUpdateProduct = (id: string, field: string, value: any) => {
+  const handleUpdateProduct = (productId: string, field: string, value: any) => {
     const newProducts = editData.products.map((p: any) =>
-      p.id === id ? { ...p, [field]: value } : p
+      p.id === productId ? { ...p, [field]: value } : p
     );
     setEditData({ ...editData, products: newProducts });
+  };
+
+  const handleInsertImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const url = event.target?.result as string;
+          const textarea = textareaRef.current?.resizableTextArea?.textArea;
+          if (textarea) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const newText = chapterContent.substring(0, start) + `![图片](${url})` + chapterContent.substring(end);
+            setChapterContent(newText);
+          } else {
+            setChapterContent(chapterContent + `\n![图片](${url})\n`);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
   };
 
   const productCategories = ['防火墙', '交换机', '路由器', 'WAF', 'IDS/IPS', 'VPN', '服务器', '存储', '无线AP', 'AC控制器', '堡垒机', '日志审计'];
@@ -198,226 +214,83 @@ const SolutionDetail: React.FC = () => {
               <Col span={8}>
                 <div style={{ marginBottom: 16 }}>
                   <Text type="secondary">方案名称 *</Text>
-                  <Input
-                    value={editData.name}
-                    onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                    style={{ marginTop: 4 }}
-                  />
+                  <Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} style={{ marginTop: 4 }} />
                 </div>
               </Col>
               <Col span={8}>
                 <div style={{ marginBottom: 16 }}>
                   <Text type="secondary">客户名称 *</Text>
-                  <Input
-                    value={editData.customerName}
-                    onChange={(e) => setEditData({ ...editData, customerName: e.target.value })}
-                    style={{ marginTop: 4 }}
-                  />
+                  <Input value={editData.customerName} onChange={(e) => setEditData({ ...editData, customerName: e.target.value })} style={{ marginTop: 4 }} />
                 </div>
               </Col>
               <Col span={8}>
                 <div style={{ marginBottom: 16 }}>
                   <Text type="secondary">所属行业</Text>
-                  <Select
-                    value={editData.industry || undefined}
-                    onChange={(v) => setEditData({ ...editData, industry: v })}
-                    style={{ width: '100%', marginTop: 4 }}
-                    allowClear
-                  >
-                    {Object.entries(industries).map(([value, label]) => (
-                      <Option key={value} value={value}>{label}</Option>
-                    ))}
+                  <Select value={editData.industry || undefined} onChange={(v) => setEditData({ ...editData, industry: v })} style={{ width: '100%', marginTop: 4 }} allowClear>
+                    {Object.entries(industries).map(([value, label]) => <Option key={value} value={value}>{label}</Option>)}
                   </Select>
                 </div>
               </Col>
               <Col span={8}>
                 <div style={{ marginBottom: 16 }}>
                   <Text type="secondary">项目规模</Text>
-                  <Select
-                    value={editData.scale || undefined}
-                    onChange={(v) => setEditData({ ...editData, scale: v })}
-                    style={{ width: '100%', marginTop: 4 }}
-                    allowClear
-                  >
-                    {Object.entries(scales).map(([value, label]) => (
-                      <Option key={value} value={value}>{label}</Option>
-                    ))}
+                  <Select value={editData.scale || undefined} onChange={(v) => setEditData({ ...editData, scale: v })} style={{ width: '100%', marginTop: 4 }} allowClear>
+                    {Object.entries(scales).map(([value, label]) => <Option key={value} value={value}>{label}</Option>)}
                   </Select>
                 </div>
               </Col>
               <Col span={8}>
                 <div style={{ marginBottom: 16 }}>
                   <Text type="secondary">预算（万元）</Text>
-                  <InputNumber
-                    value={editData.budget || undefined}
-                    onChange={(v) => setEditData({ ...editData, budget: v || 0 })}
-                    style={{ width: '100%', marginTop: 4 }}
-                    min={0}
-                  />
+                  <InputNumber value={editData.budget || undefined} onChange={(v) => setEditData({ ...editData, budget: v || 0 })} style={{ width: '100%', marginTop: 4 }} min={0} />
                 </div>
               </Col>
-              {editData.type === 'security' && (
-                <Col span={8}>
-                  <div style={{ marginBottom: 16 }}>
-                    <Text type="secondary">等保级别</Text>
-                    <Select
-                      value={editData.protectionLevel || undefined}
-                      onChange={(v) => setEditData({ ...editData, protectionLevel: v })}
-                      style={{ width: '100%', marginTop: 4 }}
-                      allowClear
-                    >
-                      <Option value="level2">二级</Option>
-                      <Option value="level3">三级</Option>
-                      <Option value="level4">四级</Option>
-                    </Select>
-                  </div>
-                </Col>
-              )}
             </Row>
           </Card>
 
           {editData.background !== undefined && (
             <Card title="项目背景" style={{ marginBottom: 16 }}>
-              <TextArea
-                value={editData.background}
-                onChange={(e) => setEditData({ ...editData, background: e.target.value })}
-                rows={4}
-              />
+              <TextArea value={editData.background} onChange={(e) => setEditData({ ...editData, background: e.target.value })} rows={4} />
             </Card>
           )}
 
           {editData.goals !== undefined && (
             <Card title="项目目标" style={{ marginBottom: 16 }}>
-              <TextArea
-                value={editData.goals}
-                onChange={(e) => setEditData({ ...editData, goals: e.target.value })}
-                rows={3}
-              />
+              <TextArea value={editData.goals} onChange={(e) => setEditData({ ...editData, goals: e.target.value })} rows={3} />
             </Card>
           )}
 
-          <Card
-            title="章节结构"
-            style={{ marginBottom: 16 }}
-            extra={<Button icon={<PlusOutlined />} onClick={handleAddChapter}>添加章节</Button>}
-          >
+          <Card title="章节结构" style={{ marginBottom: 16 }} extra={<Button icon={<PlusOutlined />} onClick={handleAddChapter}>添加章节</Button>}>
             {editData.chapters && editData.chapters.map((chapter: any, index: number) => (
-              <div
-                key={chapter.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '12px 16px',
-                  borderBottom: `1px solid ${theme.colors.border}`,
-                  background: chapter.enabled ? theme.colors.bgContainer : theme.colors.bgLayout,
-                }}
-              >
+              <div key={chapter.id} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: `1px solid ${theme.colors.border}`, background: chapter.enabled ? theme.colors.bgContainer : theme.colors.bgLayout }}>
                 <div style={{ width: 40, color: theme.colors.textTertiary }}>{chapter.order}</div>
                 <div style={{ flex: 1 }}>
-                  <Input
-                    value={chapter.title}
-                    onChange={(e) => {
-                      const newChapters = editData.chapters.map((c: any) =>
-                        c.id === chapter.id ? { ...c, title: e.target.value } : c
-                      );
-                      setEditData({ ...editData, chapters: newChapters });
-                    }}
-                    style={{ border: 'none', boxShadow: 'none', background: 'transparent' }}
-                  />
+                  <Input value={chapter.title} onChange={(e) => { const newChapters = editData.chapters.map((c: any) => c.id === chapter.id ? { ...c, title: e.target.value } : c); setEditData({ ...editData, chapters: newChapters }); }} style={{ border: 'none', boxShadow: 'none', background: 'transparent' }} />
                 </div>
                 <Space>
-                  <Button
-                    type="text"
-                    icon={<EyeOutlined />}
-                    onClick={() => handleViewChapter(chapter)}
-                  />
-                  <Button
-                    type="text"
-                    icon={<UpOutlined />}
-                    disabled={index === 0}
-                    onClick={() => handleMoveChapter(index, 'up')}
-                  />
-                  <Button
-                    type="text"
-                    icon={<DownOutlined />}
-                    disabled={index === editData.chapters.length - 1}
-                    onClick={() => handleMoveChapter(index, 'down')}
-                  />
-                  <Switch
-                    checked={chapter.enabled}
-                    onChange={(checked) => {
-                      const newChapters = editData.chapters.map((c: any) =>
-                        c.id === chapter.id ? { ...c, enabled: checked } : c
-                      );
-                      setEditData({ ...editData, chapters: newChapters });
-                    }}
-                    size="small"
-                  />
-                  <Button
-                    type="text"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDeleteChapter(chapter.id)}
-                  />
+                  <Button type="text" icon={<EditOutlined />} onClick={() => handleViewChapter(chapter)} style={{ color: theme.colors.primary }}>编辑</Button>
+                  <Button type="text" icon={<UpOutlined />} disabled={index === 0} onClick={() => handleMoveChapter(index, 'up')} />
+                  <Button type="text" icon={<DownOutlined />} disabled={index === editData.chapters.length - 1} onClick={() => handleMoveChapter(index, 'down')} />
+                  <Switch checked={chapter.enabled} onChange={(checked) => { const newChapters = editData.chapters.map((c: any) => c.id === chapter.id ? { ...c, enabled: checked } : c); setEditData({ ...editData, chapters: newChapters }); }} size="small" />
+                  <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDeleteChapter(chapter.id)} />
                 </Space>
               </div>
             ))}
           </Card>
 
-          <Card
-            title={`设备清单 (${editData.products?.length || 0}项)`}
-            style={{ marginBottom: 16 }}
-            extra={<Button icon={<PlusOutlined />} onClick={handleAddProduct}>添加设备</Button>}
-          >
+          <Card title={`设备清单 (${editData.products?.length || 0}项)`} style={{ marginBottom: 16 }} extra={<Button icon={<PlusOutlined />} onClick={handleAddProduct}>添加设备</Button>}>
             <Table
               dataSource={editData.products || []}
               rowKey="id"
               pagination={false}
               columns={[
-                {
-                  title: '类型', dataIndex: 'category', width: 120,
-                  render: (text: string, record: any) => (
-                    <Select value={text || undefined} onChange={(v) => handleUpdateProduct(record.id, 'category', v)} size="small" style={{ width: '100%' }}>
-                      {productCategories.map((cat) => <Option key={cat} value={cat}>{cat}</Option>)}
-                    </Select>
-                  ),
-                },
-                {
-                  title: '品牌', dataIndex: 'brand', width: 100,
-                  render: (text: string, record: any) => (
-                    <Input value={text} onChange={(e) => handleUpdateProduct(record.id, 'brand', e.target.value)} size="small" />
-                  ),
-                },
-                {
-                  title: '型号', dataIndex: 'model', width: 120,
-                  render: (text: string, record: any) => (
-                    <Input value={text} onChange={(e) => handleUpdateProduct(record.id, 'model', e.target.value)} size="small" />
-                  ),
-                },
-                {
-                  title: '数量', dataIndex: 'quantity', width: 80,
-                  render: (text: number, record: any) => (
-                    <InputNumber value={text} onChange={(v) => handleUpdateProduct(record.id, 'quantity', v || 1)} min={1} size="small" style={{ width: '100%' }} />
-                  ),
-                },
-                {
-                  title: '位置', dataIndex: 'location',
-                  render: (text: string, record: any) => (
-                    <Input value={text} onChange={(e) => handleUpdateProduct(record.id, 'location', e.target.value)} size="small" />
-                  ),
-                },
-                {
-                  title: '备注', dataIndex: 'remark',
-                  render: (text: string, record: any) => (
-                    <Input value={text} onChange={(e) => handleUpdateProduct(record.id, 'remark', e.target.value)} size="small" />
-                  ),
-                },
-                {
-                  title: '操作', width: 60,
-                  render: (_: any, record: any) => (
-                    <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDeleteProduct(record.id)} />
-                  ),
-                },
+                { title: '类型', dataIndex: 'category', width: 120, render: (text: string, record: any) => (<Select value={text || undefined} onChange={(v) => handleUpdateProduct(record.id, 'category', v)} size="small" style={{ width: '100%' }}>{productCategories.map((cat) => <Option key={cat} value={cat}>{cat}</Option>)}</Select>) },
+                { title: '品牌', dataIndex: 'brand', width: 100, render: (text: string, record: any) => (<Input value={text} onChange={(e) => handleUpdateProduct(record.id, 'brand', e.target.value)} size="small" />) },
+                { title: '型号', dataIndex: 'model', width: 120, render: (text: string, record: any) => (<Input value={text} onChange={(e) => handleUpdateProduct(record.id, 'model', e.target.value)} size="small" />) },
+                { title: '数量', dataIndex: 'quantity', width: 80, render: (text: number, record: any) => (<InputNumber value={text} onChange={(v) => handleUpdateProduct(record.id, 'quantity', v || 1)} min={1} size="small" style={{ width: '100%' }} />) },
+                { title: '位置', dataIndex: 'location', render: (text: string, record: any) => (<Input value={text} onChange={(e) => handleUpdateProduct(record.id, 'location', e.target.value)} size="small" />) },
+                { title: '备注', dataIndex: 'remark', render: (text: string, record: any) => (<Input value={text} onChange={(e) => handleUpdateProduct(record.id, 'remark', e.target.value)} size="small" />) },
+                { title: '操作', width: 60, render: (_: any, record: any) => (<Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDeleteProduct(record.id)} />) },
               ]}
             />
           </Card>
@@ -426,33 +299,21 @@ const SolutionDetail: React.FC = () => {
         <>
           <Card title="基本信息" style={{ marginBottom: 16 }}>
             <Descriptions column={3} bordered>
-              <Descriptions.Item label="方案类型">
-                <Tag color={solution.type === 'network' ? 'blue' : 'red'}>
-                  {solution.type === 'network' ? '网络建设' : '网络安全'}
-                </Tag>
-              </Descriptions.Item>
+              <Descriptions.Item label="方案类型"><Tag color={solution.type === 'network' ? 'blue' : 'red'}>{solution.type === 'network' ? '网络建设' : '网络安全'}</Tag></Descriptions.Item>
               <Descriptions.Item label="方案名称">{solution.name}</Descriptions.Item>
               <Descriptions.Item label="客户名称">{solution.customerName}</Descriptions.Item>
               <Descriptions.Item label="所属行业">{industries[solution.industry] || solution.industry || '-'}</Descriptions.Item>
               <Descriptions.Item label="项目规模">{scales[solution.scale] || solution.scale || '-'}</Descriptions.Item>
               <Descriptions.Item label="预算">{solution.budget ? `${solution.budget.toLocaleString()}万元` : '-'}</Descriptions.Item>
-              {solution.protectionLevel && (
-                <Descriptions.Item label="等保级别">{protectionLevels[solution.protectionLevel] || solution.protectionLevel}</Descriptions.Item>
-              )}
-              <Descriptions.Item label="状态">
-                <Tag color={solution.status === 'completed' ? 'green' : 'orange'}>
-                  {solution.status === 'completed' ? '已完成' : '草稿'}
-                </Tag>
-              </Descriptions.Item>
+              {solution.protectionLevel && <Descriptions.Item label="等保级别">{protectionLevels[solution.protectionLevel] || solution.protectionLevel}</Descriptions.Item>}
+              <Descriptions.Item label="状态"><Tag color={solution.status === 'completed' ? 'green' : 'orange'}>{solution.status === 'completed' ? '已完成' : '草稿'}</Tag></Descriptions.Item>
               <Descriptions.Item label="更新时间">{new Date(solution.updatedAt).toLocaleString()}</Descriptions.Item>
             </Descriptions>
           </Card>
 
           {solution.standards && solution.standards.length > 0 && (
             <Card title="参考标准" style={{ marginBottom: 16 }}>
-              <Space wrap>
-                {solution.standards.map((s: string) => <Tag key={s} color="blue">{s}</Tag>)}
-              </Space>
+              <Space wrap>{solution.standards.map((s: string) => <Tag key={s} color="blue">{s}</Tag>)}</Space>
             </Card>
           )}
 
@@ -478,17 +339,11 @@ const SolutionDetail: React.FC = () => {
                       hoverable
                       style={{ cursor: 'pointer' }}
                       onClick={() => handleViewChapter(c)}
-                      title={
-                        <span style={{ color: theme.colors.primary }}>
-                          {i + 1}. {c.title}
-                        </span>
-                      }
+                      title={<span style={{ color: theme.colors.primary }}>{i + 1}. {c.title}</span>}
                       extra={c.content ? <Tag color="green">已填写</Tag> : <Tag>未填写</Tag>}
                     >
                       {c.content ? (
-                        <Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 0, fontSize: 12 }}>
-                          {c.content}
-                        </Paragraph>
+                        <Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 0, fontSize: 12 }}>{c.content}</Paragraph>
                       ) : (
                         <Text type="secondary" style={{ fontSize: 12 }}>点击查看详情</Text>
                       )}
@@ -523,23 +378,30 @@ const SolutionDetail: React.FC = () => {
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {editMode ? '编辑章节' : '预览章节'}: {selectedChapter?.title}
-            {editMode && (
-              <Tag color="orange">编辑模式</Tag>
-            )}
+            <span>{selectedChapter?.title}</span>
+            {editMode && <Tag color="orange">可编辑</Tag>}
           </div>
         }
         open={chapterModalOpen}
-        onOk={editMode ? handleSaveChapter : () => setChapterModalOpen(false)}
-        onCancel={() => { setChapterModalOpen(false); setEditMode(false); }}
-        width={700}
+        onOk={editMode ? handleEditChapterContent : () => setChapterModalOpen(false)}
+        onCancel={() => setChapterModalOpen(false)}
+        width={800}
         okText={editMode ? '保存' : '关闭'}
         cancelText="取消"
       >
+        {editMode && (
+          <div style={{ marginBottom: 8 }}>
+            <Button size="small" icon={<PictureOutlined />} onClick={handleInsertImage}>
+              插入图片
+            </Button>
+            <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>支持插入本地图片</Text>
+          </div>
+        )}
         {editMode ? (
           <TextArea
-            value={selectedChapter?.content || ''}
-            onChange={(e) => setSelectedChapter({ ...selectedChapter, content: e.target.value })}
+            ref={textareaRef}
+            value={chapterContent}
+            onChange={(e) => setChapterContent(e.target.value)}
             rows={20}
             style={{ fontSize: 14, lineHeight: 1.8 }}
           />

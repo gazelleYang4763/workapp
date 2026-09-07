@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, Steps, Button, Form, Input, Select, Row, Col, Switch, Table, Space, message, Tag, Divider, Typography, Modal, InputNumber, Tooltip, Empty } from 'antd';
 import {
   SaveOutlined, ExportOutlined, ArrowLeftOutlined, PlusOutlined, DeleteOutlined,
-  UpOutlined, DownOutlined, FileTextOutlined, EyeOutlined, EditOutlined,
+  UpOutlined, DownOutlined, FileTextOutlined, EyeOutlined, EditOutlined, PictureOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/theme';
@@ -483,6 +483,7 @@ const SolutionCreate: React.FC = () => {
   const [chapterContent, setChapterContent] = useState('');
   const [isCustomSubType, setIsCustomSubType] = useState(false);
   const [isCustomIndustry, setIsCustomIndustry] = useState(false);
+  const textareaRef = useRef<any>(null);
 
   const networkTypes = [
     { value: 'campus', label: '园区网络', desc: '企业园区网络建设', icon: '🏢' },
@@ -633,6 +634,32 @@ const SolutionCreate: React.FC = () => {
       setChapterModalOpen(false);
       message.success('章节内容已保存');
     }
+  };
+
+  const handleInsertImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const url = event.target?.result as string;
+          const textarea = textareaRef.current?.resizableTextArea?.textArea;
+          if (textarea) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const newText = chapterContent.substring(0, start) + `![图片](${url})` + chapterContent.substring(end);
+            setChapterContent(newText);
+          } else {
+            setChapterContent(chapterContent + `\n![图片](${url})\n`);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
   };
 
   const handleAddProduct = () => {
@@ -1053,7 +1080,14 @@ const SolutionCreate: React.FC = () => {
             💡 以下为模板内容，您可以直接修改。修改后仅影响当前方案，不会影响其他方案。
           </Text>
         </div>
+        <div style={{ marginBottom: 8 }}>
+          <Button size="small" icon={<PictureOutlined />} onClick={handleInsertImage}>
+            插入图片
+          </Button>
+          <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>支持插入本地图片</Text>
+        </div>
         <TextArea
+          ref={textareaRef}
           value={chapterContent}
           onChange={(e) => setChapterContent(e.target.value)}
           rows={20}
