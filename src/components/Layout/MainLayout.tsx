@@ -43,6 +43,7 @@ const MainLayout: React.FC = () => {
 
   const getSelectedKeys = () => {
     const path = location.pathname;
+    if (path === '/') return ['home'];
     if (path === '/solution' || path.startsWith('/solution/list')) return ['solution-list'];
     if (path === '/solution/create') return ['solution-create'];
     if (path.startsWith('/knowledge/common')) return ['knowledge-common'];
@@ -57,6 +58,11 @@ const MainLayout: React.FC = () => {
   };
 
   const menuItems = [
+    {
+      key: 'home',
+      icon: <HomeOutlined />,
+      label: '首页',
+    },
     {
       key: 'solution',
       icon: <FileTextOutlined />,
@@ -99,6 +105,9 @@ const MainLayout: React.FC = () => {
 
   const handleMenuClick = ({ key }: { key: string }) => {
     switch (key) {
+      case 'home':
+        navigate('/');
+        break;
       case 'solution-list':
         navigate('/solution');
         break;
@@ -190,7 +199,10 @@ const MainLayout: React.FC = () => {
           overflow: 'auto',
         }}
       >
-        <div style={{ padding: '16px', textAlign: 'center', borderBottom: `1px solid ${theme.colors.border}` }}>
+        <div
+          style={{ padding: '16px', textAlign: 'center', borderBottom: `1px solid ${theme.colors.border}`, cursor: 'pointer' }}
+          onClick={() => navigate('/')}
+        >
           {logoUrl ? (
             <img src={logoUrl} alt="Logo" style={{ width: 32, height: 32 }} />
           ) : (
