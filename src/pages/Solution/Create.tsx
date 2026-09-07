@@ -639,21 +639,27 @@ const SolutionCreate: React.FC = () => {
   const handleInsertImage = () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/png,image/jpeg,image/gif,image/webp,image/bmp,image/svg+xml';
     input.onchange = (e: any) => {
       const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = (event) => {
           const url = event.target?.result as string;
+          const markdownImg = `\n![${file.name}](${url})\n`;
           const textarea = textareaRef.current?.resizableTextArea?.textArea;
           if (textarea) {
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
-            const newText = chapterContent.substring(0, start) + `![图片](${url})` + chapterContent.substring(end);
+            const newText = chapterContent.substring(0, start) + markdownImg + chapterContent.substring(end);
+            const cursorPos = start + markdownImg.length;
             setChapterContent(newText);
+            requestAnimationFrame(() => {
+              textarea.focus();
+              textarea.setSelectionRange(cursorPos, cursorPos);
+            });
           } else {
-            setChapterContent(chapterContent + `\n![图片](${url})\n`);
+            setChapterContent(chapterContent + markdownImg);
           }
         };
         reader.readAsDataURL(file);
