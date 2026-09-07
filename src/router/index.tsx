@@ -8,6 +8,7 @@ import SolutionDetail from '@/pages/Solution/Detail';
 import KnowledgeHome from '@/pages/Knowledge';
 import KnowledgeCommon from '@/pages/Knowledge/Common';
 import KnowledgeProducts from '@/pages/Knowledge/Products';
+import KnowledgeTechDocs from '@/pages/Knowledge/TechDocs';
 import KnowledgeCompetitors from '@/pages/Knowledge/Competitors';
 import KnowledgeCases from '@/pages/Knowledge/Cases';
 import KnowledgeStandards from '@/pages/Knowledge/Standards';
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
           { path: 'common', element: <KnowledgeCommon /> },
           { path: 'common/:type', element: <KnowledgeCommon /> },
           { path: 'products', element: <KnowledgeProducts /> },
+          { path: 'techdocs', element: <KnowledgeTechDocs /> },
           { path: 'competitors', element: <KnowledgeCompetitors /> },
           { path: 'cases', element: <KnowledgeCases /> },
           { path: 'standards', element: <KnowledgeStandards /> },
