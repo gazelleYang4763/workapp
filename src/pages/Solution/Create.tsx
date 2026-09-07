@@ -4,6 +4,7 @@ import { SaveOutlined, ExportOutlined, ArrowLeftOutlined, ArrowRightOutlined, Pl
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/theme';
 import { useSolutionStore } from '@/store/solution';
+import { exportMarkdown, exportHtml, printSolution } from '@/utils/export';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -95,7 +96,29 @@ const SolutionCreate: React.FC = () => {
   };
 
   const handleExport = (format: string) => {
-    message.info(`导出${format}功能开发中...`);
+    const solution = {
+      ...solutionData,
+      id: Date.now().toString(),
+      type: solutionData.type as 'network' | 'security',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    switch (format) {
+      case 'Markdown':
+        exportMarkdown(solution as any);
+        message.success('已导出Markdown文件');
+        break;
+      case 'HTML':
+        exportHtml(solution as any);
+        message.success('已导出HTML文件');
+        break;
+      case '打印':
+        printSolution(solution as any);
+        break;
+      default:
+        message.info(`导出${format}功能开发中...`);
+    }
   };
 
   const step1Content = (
@@ -524,9 +547,9 @@ const SolutionCreate: React.FC = () => {
         </Space>
         <Space>
           <Button icon={<SaveOutlined />} onClick={handleSave}>保存</Button>
-          <Button icon={<ExportOutlined />} onClick={() => handleExport('Word')}>导出Word</Button>
-          <Button onClick={() => handleExport('PDF')}>导出PDF</Button>
-          <Button onClick={() => handleExport('MD')}>导出MD</Button>
+          <Button icon={<ExportOutlined />} onClick={() => handleExport('Markdown')}>导出MD</Button>
+          <Button onClick={() => handleExport('HTML')}>导出HTML</Button>
+          <Button onClick={() => handleExport('打印')}>打印预览</Button>
         </Space>
       </div>
 
