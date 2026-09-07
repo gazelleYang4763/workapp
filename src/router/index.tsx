@@ -13,6 +13,7 @@ import KnowledgeCases from '@/pages/Knowledge/Cases';
 import KnowledgeStandards from '@/pages/Knowledge/Standards';
 import KnowledgeCustom from '@/pages/Knowledge/Custom';
 import SecuritySites from '@/pages/SecuritySites';
+import Settings from '@/pages/Settings';
 
 const router = createBrowserRouter([
   {
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
       {
         path: 'security-sites',
         element: <SecuritySites />,
+      },
+      {
+        path: 'settings',
+        element: <Settings />,
       },
     ],
   },

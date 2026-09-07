@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout, Menu, Input, Button, Breadcrumb, Space } from 'antd';
 import {
   HomeOutlined,
@@ -11,9 +11,12 @@ import {
   PlusOutlined,
   UndoOutlined,
   RedoOutlined,
+  SettingOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useThemeStore } from '@/store/theme';
+import { usePlatformStore } from '@/store/platform';
 import ThemeToggle from '../ThemeToggle';
 
 const { Header, Sider, Content } = Layout;
@@ -24,7 +27,12 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const { theme } = useThemeStore();
+  const { platformName, logoUrl, loadSettings } = usePlatformStore();
   const isHome = location.pathname === '/';
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
 
   const getOpenKeys = () => {
     const path = location.pathname;
@@ -43,6 +51,8 @@ const MainLayout: React.FC = () => {
     if (path.startsWith('/knowledge/cases')) return ['knowledge-cases'];
     if (path.startsWith('/knowledge/standards')) return ['knowledge-standards'];
     if (path.startsWith('/knowledge/custom')) return ['knowledge-custom'];
+    if (path.startsWith('/security-sites')) return ['security-sites'];
+    if (path.startsWith('/settings')) return ['settings'];
     return [];
   };
 
@@ -68,6 +78,16 @@ const MainLayout: React.FC = () => {
         { key: 'knowledge-standards', label: '标准规范库' },
         { key: 'knowledge-custom', label: '我的知识库' },
       ],
+    },
+    {
+      key: 'security-sites',
+      icon: <GlobalOutlined />,
+      label: '安全站点',
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: '系统设置',
     },
   ];
 
@@ -102,6 +122,12 @@ const MainLayout: React.FC = () => {
         break;
       case 'knowledge-custom':
         navigate('/knowledge/custom');
+        break;
+      case 'security-sites':
+        navigate('/security-sites');
+        break;
+      case 'settings':
+        navigate('/settings');
         break;
     }
   };
@@ -165,9 +191,13 @@ const MainLayout: React.FC = () => {
         }}
       >
         <div style={{ padding: '16px', textAlign: 'center', borderBottom: `1px solid ${theme.colors.border}` }}>
-          <div style={{ fontSize: 24, color: theme.colors.primary }}>📋</div>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" style={{ width: 32, height: 32 }} />
+          ) : (
+            <div style={{ fontSize: 24, color: theme.colors.primary }}>📋</div>
+          )}
           {!collapsed && (
-            <div style={{ marginTop: 8, fontWeight: 600, color: theme.colors.textPrimary }}>工作台</div>
+            <div style={{ marginTop: 8, fontWeight: 600, color: theme.colors.textPrimary }}>{platformName}</div>
           )}
         </div>
         <Menu
