@@ -177,6 +177,11 @@ const MainLayout: React.FC = () => {
     return '工作台';
   };
 
+  const showToolbar = () => {
+    const path = location.pathname;
+    return path.startsWith('/solution') || path.startsWith('/knowledge');
+  };
+
   return (
     <Layout style={{ minHeight: '100vh', background: theme.colors.bgLayout }}>
       <Sider
@@ -240,29 +245,31 @@ const MainLayout: React.FC = () => {
           </span>
         </Header>
 
-        <div style={{
-          background: theme.colors.bgContainer,
-          padding: '12px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: `1px solid ${theme.colors.border}`,
-        }}>
-          <Space>
-            <Button icon={<PlusOutlined />} style={{ borderRadius: 8 }}>新建</Button>
-            <Button icon={<SaveOutlined />} type="primary" style={{ borderRadius: 8 }}>保存</Button>
-            <Button icon={<UndoOutlined />} style={{ borderRadius: 8 }}>撤销</Button>
-            <Button icon={<RedoOutlined />} style={{ borderRadius: 8 }}>重做</Button>
-          </Space>
-          <Space>
-            <span style={{ color: theme.colors.textSecondary, fontSize: 12 }}>✓ 已保存</span>
-            <Search
-              placeholder="搜索..."
-              onSearch={handleSearch}
-              style={{ width: 250 }}
-            />
-          </Space>
-        </div>
+        {showToolbar() && (
+          <div style={{
+            background: theme.colors.bgContainer,
+            padding: '12px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: `1px solid ${theme.colors.border}`,
+          }}>
+            <Space>
+              <Button icon={<PlusOutlined />} style={{ borderRadius: 8 }}>新建</Button>
+              <Button icon={<SaveOutlined />} type="primary" style={{ borderRadius: 8 }}>保存</Button>
+              <Button icon={<UndoOutlined />} style={{ borderRadius: 8 }}>撤销</Button>
+              <Button icon={<RedoOutlined />} style={{ borderRadius: 8 }}>重做</Button>
+            </Space>
+            <Space>
+              <span style={{ color: theme.colors.textSecondary, fontSize: 12 }}>✓ 已保存</span>
+              <Search
+                placeholder="搜索..."
+                onSearch={handleSearch}
+                style={{ width: 250 }}
+              />
+            </Space>
+          </div>
+        )}
 
         <Content style={{ padding: 24, minHeight: 'calc(100vh - 120px)' }}>
           <Breadcrumb items={getBreadcrumbItems()} style={{ marginBottom: 16 }} />
