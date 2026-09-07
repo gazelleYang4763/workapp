@@ -48,6 +48,7 @@ const MainLayout: React.FC = () => {
     if (path === '/solution/create') return ['solution-create'];
     if (path.startsWith('/knowledge/common')) return ['knowledge-common'];
     if (path.startsWith('/knowledge/products')) return ['knowledge-products'];
+    if (path.startsWith('/knowledge/techdocs')) return ['knowledge-techdocs'];
     if (path.startsWith('/knowledge/competitors')) return ['knowledge-competitors'];
     if (path.startsWith('/knowledge/cases')) return ['knowledge-cases'];
     if (path.startsWith('/knowledge/standards')) return ['knowledge-standards'];
@@ -79,6 +80,7 @@ const MainLayout: React.FC = () => {
       children: [
         { key: 'knowledge-common', label: '通识知识库' },
         { key: 'knowledge-products', label: '产品知识库' },
+        { key: 'knowledge-techdocs', label: '技术文档库' },
         { key: 'knowledge-competitors', label: '竞品分析库' },
         { key: 'knowledge-cases', label: '行业案例库' },
         { key: 'knowledge-standards', label: '标准规范库' },
@@ -120,6 +122,9 @@ const MainLayout: React.FC = () => {
       case 'knowledge-products':
         navigate('/knowledge/products');
         break;
+      case 'knowledge-techdocs':
+        navigate('/knowledge/techdocs');
+        break;
       case 'knowledge-competitors':
         navigate('/knowledge/competitors');
         break;
@@ -156,6 +161,7 @@ const MainLayout: React.FC = () => {
       items.push({ title: '知识库', href: '/knowledge' });
       if (path.includes('/common')) items.push({ title: '通识知识库' });
       if (path.includes('/products')) items.push({ title: '产品知识库' });
+      if (path.includes('/techdocs')) items.push({ title: '技术文档库' });
       if (path.includes('/competitors')) items.push({ title: '竞品分析库' });
       if (path.includes('/cases')) items.push({ title: '行业案例库' });
       if (path.includes('/standards')) items.push({ title: '标准规范库' });
