@@ -108,7 +108,7 @@ const MainLayout: React.FC = () => {
 
   const getBreadcrumbItems = () => {
     const path = location.pathname;
-    const items = [{ title: '首页', href: '/' }];
+    const items: { title: string; href?: string }[] = [{ title: '首页', href: '/' }];
 
     if (path.startsWith('/solution')) {
       items.push({ title: '方案中心', href: '/solution' });
@@ -125,6 +125,8 @@ const MainLayout: React.FC = () => {
       if (path.includes('/cases')) items.push({ title: '行业案例库' });
       if (path.includes('/standards')) items.push({ title: '标准规范库' });
       if (path.includes('/custom')) items.push({ title: '我的知识库' });
+    } else if (path.includes('/security-sites')) {
+      items.push({ title: '安全站点' });
     }
 
     return items;

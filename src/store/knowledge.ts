@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { KnowledgeBase, Product, Competitor, Case, Standard } from '@/types/knowledge';
+import type { KnowledgeBase, Product, Competitor, Case, Standard } from '@/types/knowledge';
 
 interface KnowledgeStore {
   knowledgeBases: KnowledgeBase[];

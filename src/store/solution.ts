@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Solution } from '@/types/solution';
+import type { Solution } from '@/types/solution';
 
 interface SolutionStore {
   solutions: Solution[];

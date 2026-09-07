@@ -1,7 +1,8 @@
 import { ConfigProvider, theme as antdTheme } from 'antd';
+import { RouterProvider } from 'react-router-dom';
 import zhCN from 'antd/locale/zh_CN';
 import { useThemeStore } from '@/store/theme';
-import Router from '@/router';
+import router from '@/router';
 
 const App: React.FC = () => {
   const { mode, theme } = useThemeStore();
@@ -22,7 +23,7 @@ const App: React.FC = () => {
         algorithm: mode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
       }}
     >
-      <Router />
+      <RouterProvider router={router} />
     </ConfigProvider>
   );
 };

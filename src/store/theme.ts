@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ThemeMode, Theme } from '@/types/theme';
+import type { ThemeMode, Theme } from '@/types/theme';
 import { lightTheme, darkTheme } from '@/config/theme';
 
 interface ThemeStore {
