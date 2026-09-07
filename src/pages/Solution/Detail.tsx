@@ -177,6 +177,24 @@ const SolutionDetail: React.FC = () => {
 
   const productCategories = ['防火墙', '交换机', '路由器', 'WAF', 'IDS/IPS', 'VPN', '服务器', '存储', '无线AP', 'AC控制器', '堡垒机', '日志审计'];
 
+  const renderPreview = (text: string) => {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/__(.*?)__/g, '<u>$1</u>')
+      .replace(/~~(.*?)~~/g, '<del>$1</del>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
+      .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%"/>')
+      .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+      .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
+      .replace(/^\- (.*$)/gm, '<li>$1</li>')
+      .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
+      .replace(/\n/g, '<br/>');
+  };
+
   return (
     <div>
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -345,7 +363,10 @@ const SolutionDetail: React.FC = () => {
                       extra={c.content ? <Tag color="green">已填写</Tag> : <Tag>未填写</Tag>}
                     >
                       {c.content ? (
-                        <Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 0, fontSize: 12 }}>{c.content}</Paragraph>
+                        <div
+                          style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+                          dangerouslySetInnerHTML={{ __html: renderPreview(c.content) }}
+                        />
                       ) : (
                         <Text type="secondary" style={{ fontSize: 12 }}>点击查看详情</Text>
                       )}
@@ -408,9 +429,14 @@ const SolutionDetail: React.FC = () => {
             style={{ fontSize: 14, lineHeight: 1.8 }}
           />
         ) : (
-          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8, maxHeight: 500, overflow: 'auto' }}>
-            {selectedChapter?.content || '暂无内容'}
-          </div>
+          <div
+            style={{ lineHeight: 1.8, maxHeight: 500, overflow: 'auto', fontSize: 14, padding: '12px 16px' }}
+            dangerouslySetInnerHTML={{
+              __html: selectedChapter?.content
+                ? renderPreview(selectedChapter.content)
+                : '<span style="color:#999">暂无内容</span>'
+            }}
+          />
         )}
       </Modal>
     </div>
